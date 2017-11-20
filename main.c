@@ -5,50 +5,62 @@
 #define READ 0 
 #define WRITE 1
 
-void parent_stuff(int fds[], int oldnum){
+void parent_stuff(int in[], int out[], int oldnum){
 	
-	write(fds[WRITE], &oldnum , sizeof(oldnum) );
-	close(fds[WRITE]);
+	close(out[READ]);
+	close(in[WRITE]);
+
+	write(out[WRITE], &oldnum , sizeof(oldnum) );
+	close(out[WRITE]);
 
 	printf("[parent] sending: %d\n", oldnum);
 	
+
 	int newnum; 
-	read(fds[READ], &newnum, sizeof(newnum));
-	close(fds[READ]);
+
+	read(in[READ], &newnum, sizeof(newnum));
+	close(in[READ]);
 
 	printf("[parent] recieved: %d\n", newnum);
 
 }
 
-void child_stuff(int fds[]){
+void child_stuff(int in[], int out[]){
+		
+	close(in[WRITE]);
+	close(out[READ]);
+	
 	int num; 
-	read(fds[READ], &num, sizeof(num));
-	close(fds[READ]);
+	read(in[READ], &num, sizeof(num));
+	close(in[READ]);
 
 	printf("[child] doing maths on: %d\n", num);
 	
 	num *= num;
-	write(fds[WRITE], &num, sizeof(num));
-	close(fds[WRITE]);
+	write(out[WRITE], &num, sizeof(num));
+	close(out[WRITE]);
 }
 
 int main(){
 
-	int fds[2];
+	int to_child[2];
+	int to_parent[2];
 
-	pipe(fds);
+	pipe(to_child);
+	pipe(to_parent);
+
 	int f = fork();
 
 	if (f == -1){
-		perror("Pipe could not be opened");
+		perror("Child could not be forked");
 		exit(1);
 	}
 
 	if (!f){//parent
-		parent_stuff(fds, 15);
+		parent_stuff(to_parent, to_child, 15);
 	} 
 	else{//child
-		child_stuff(fds);
+		child_stuff(to_child, to_parent);
 	}
 
 	return 0;
