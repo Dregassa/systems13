@@ -41,23 +41,36 @@ void child_stuff(int in[], int out[]){
 	close(out[WRITE]);
 }
 
-int main(){
+int main(int argc, char ** argv){
+	
+	int number = 15;	
+
+	if (argc == 2){
+		number = atoi(argv[1]); //convert string to int
+	}
+
 
 	int to_child[2];
 	int to_parent[2];
 
-	pipe(to_child);
-	pipe(to_parent);
+	if( pipe(to_child) == -1){
+		perror("Pipe to child could not be created");
+		exit(1);
+	}
+	if ( pipe(to_parent) == -1){
+		perror("Pipe to parent could not be created");
+		exit(2);
+	}
 
 	int f = fork();
 
 	if (f == -1){
 		perror("Child could not be forked");
-		exit(1);
+		exit(3);
 	}
 
 	if (!f){//parent
-		parent_stuff(to_parent, to_child, 15);
+		parent_stuff(to_parent, to_child, number);
 	} 
 	else{//child
 		child_stuff(to_child, to_parent);
